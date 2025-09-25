@@ -2,11 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta title="index web">
+    <title>任务状态</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
 </head>
 <body>
-    <P>welcome !!{{name}}</P>
+    <div>
+        <p>状态: {{ state }}</p>
+        <p>结果: {{ result }}</p>
+    </div>
 </body>
 </html>
