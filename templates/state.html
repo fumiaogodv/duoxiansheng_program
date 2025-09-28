@@ -1,14 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>任务状态</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <meta charset="utf-8">
+    <title>任务进度</title>
+    <style>
+        /* 外层容器 */
+        #progress-container {
+            width: 80%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            height: 30px;
+            position: relative;
+        }
+
+        /* 内层进度条 */
+        #progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: #4caf50;
+            text-align: right;
+            line-height: 30px;
+            color: white;
+            padding-right: 5px;
+            box-sizing: border-box;
+            transition: width 0.3s ease;
+        }
+
+        /* 百分比文字 */
+        #progress-text {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            line-height: 30px;
+            font-weight: bold;
+            color: black;
+        }
+    </style>
 </head>
 <body>
-    <div>
-        <p>状态: {{ state }}</p>
-        <p>结果: {{ result }}</p>
+    <h2>任务进度</h2>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+        <div id="progress-text">0%</div>
     </div>
+
+    <script>
+        function updateProgress() {
+            fetch("/task_status/{{ task_id }}")
+                .then(res => res.json())
+                .then(data => {
+                    let percent = 0;
+                    if (data.state === "PROGRESS" || data.state === "SUCCESS") {
+                        percent = Math.floor(data.current / data.total * 100);
+                        if (data.state === "SUCCESS") percent = 100;
+                    }
+
+                    // 更新进度条宽度
+                    document.getElementById("progress-bar").style.width = percent + "%";
+
+                    // 更新右侧百分比文字
+                    document.getElementById("progress-text").innerText = percent + "%";
+
+                    // 如果任务未完成，继续轮询
+                    if (data.state !== "SUCCESS") {
+                        setTimeout(updateProgress, 1000);
+                    } else {
+                        document.getElementById("progress-text").innerText = "完成! " + percent + "%";
+                    }
+                });
+        }
+
+        updateProgress();
+    </script>
 </body>
 </html>

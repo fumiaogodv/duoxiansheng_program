@@ -8,3 +8,8 @@ kill -9 <PID>
 
 ps aux | grep redis
 kill -9 <PID>
+
+
+
+It realizes the continuous transmission of the results of 
+the function during its operation, and then displays the results.
