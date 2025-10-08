@@ -48,32 +48,45 @@
     </div>
 
     <script>
-        function updateProgress() {
-            fetch("/task_status/{{ task_id }}")
-                .then(res => res.json())
-                .then(data => {
-                    let percent = 0;
-                    if (data.state === "PROGRESS" || data.state === "SUCCESS") {
-                        percent = Math.floor(data.current / data.total * 100);
-                        if (data.state === "SUCCESS") percent = 100;
-                    }
+    const taskId = "{{ task_id }}";   // Flask 传入的任务 ID
+    const source = new EventSource("/stream/" + taskId);
 
-                    // 更新进度条宽度
-                    document.getElementById("progress-bar").style.width = percent + "%";
+    source.onmessage = function(event) {
+        // 直接解析 JSON，和后端 yield 格式完全对应
+        const data = JSON.parse(event.data);
 
-                    // 更新右侧百分比文字
-                    document.getElementById("progress-text").innerText = percent + "%";
+        let percent = 0;
 
-                    // 如果任务未完成，继续轮询
-                    if (data.state !== "SUCCESS") {
-                        setTimeout(updateProgress, 1000);
-                    } else {
-                        document.getElementById("progress-text").innerText = "完成! " + percent + "%";
-                    }
-                });
+        // 如果是 PROGRESS 或 SUCCESS，计算百分比
+        if (data.state === "PROGRESS" || data.state === "SUCCESS") {
+            // 避免 total 为 0
+            const total = data.total || 1;
+            const current = data.current || 0;
+            percent = Math.floor(current / total * 100);
+
+            // 如果状态是 SUCCESS，确保百分比为 100
+            if (data.state === "SUCCESS") percent = 100;
         }
 
-        updateProgress();
-    </script>
+        // 更新进度条宽度
+        document.getElementById("progress-bar").style.width = percent + "%";
+
+        // 更新右侧百分比文字
+        document.getElementById("progress-text").innerText =
+            (data.state === "SUCCESS") ? "完成! " + percent + "%" : percent + "%";
+
+        // 如果任务结束，关闭 SSE 连接
+        if (data.state === "SUCCESS" || data.state === "FAILURE") {
+            source.close();
+        }
+    };
+
+    // 可选：监听错误，防止 SSE 断开
+    source.onerror = function(err) {
+        console.error("SSE 连接错误:", err);
+        // source.close(); // 也可以选择断开
+    };
+</script>
+
 </body>
 </html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>任务进度</title>
+</head>
+<body>
+    <h2>任务进度</h2>
+
+    <div id="progress-container">
+        <div id="progress-text">0%</div>
+    </div>
+
+    <script>
+        const taskid="{{task_id}}";
+        const source =new EventSource("/stream/"+taskid);
+
+        source.onmessage=function (event){
+            const data=JSON.parse(event.data);
+
+            let percent=0;
+            if(data.state==="PROGRESS"||data.state==="SUCCESS"){
+                percent=Math.floor(data.current/data.total*100);
+                if (data.state==="SUCCESS") percent=100;
+            }
+
+            document.getElementById("progress-text").innerText=percent+"%"
+
+            if (data.state === "SUCCESS" || data.state === "FAILURE") {
+                source.close();
+            }
+        }
+    </script>
+
+</body>
+</html>
